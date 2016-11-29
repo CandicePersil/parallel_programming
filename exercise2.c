@@ -14,10 +14,11 @@
 
 int main(int argc, char *argv[]) {
 	const int tag = 42;	        /* Message tag */
-	int   id, ntasks, source_id, i, N;//N is the size of the Matrix
-	double square;
+	int id, ntasks, source_id, i, N;
+	/* N is the size of the Matrix */
+	double square, sN;	/*square root of the number of processes, sN is the submatrix size*/
 	MPI_Status status;
-	char msg[80], fileName[20];	      	       /* Message array */
+	char msg[80], fileName[20];	/* Message array  and file name array */
 	
 	/* Initialize MPI */
 	if ( MPI_Init(&argc, &argv) != MPI_SUCCESS) {
@@ -46,23 +47,27 @@ int main(int argc, char *argv[]) {
 		exit(0);
 	}
 	if(id==0){
-		printf("Enter file name:\n");
+		printf("Enter file name:\n");/*Ask users to enter file name*/
 		fflush(stdout);
 		scanf("%s", fileName);
 		int nameSize = 0;
+		/* Count the file name array size */
 		while(fileName[nameSize]!='\0'){
 			nameSize++;
 		}
+		/* If the file name does not start with M, all processes have to be stoped */
 		if(fileName[0]!='M'){
 			MPI_Finalize();
 			printf("Error in file name, it has to start with char M!\n");
 			exit(0);
 		}
+		/* If the file name has no extension, stop */
 		if(fileName[nameSize-4]!='.'){
 			MPI_Finalize();
 			printf("Error in file name, no extension!\n");
 			exit(0);
 		}
+		/* If the file name has not the right extension, stop */
 		for(i=0;i<nameSize;i++){
 			if(fileName[i]=='.'){
 				if((fileName[i+1]!='d')||(fileName[i+2]!='a')||(fileName[i+3]!='t')){
@@ -73,21 +78,33 @@ int main(int argc, char *argv[]) {
 			}
 		}
 		printf("File %s has a name of %d char.\n", fileName, nameSize);
-		char tabN[nameSize-4];
+		char tabN[nameSize-4];/* Creation of a new table of char that contains only the matrix size */
 		int j=0;
 		for(i=0;i<nameSize;i++){
-			if(fileName[i]=='M'){				
+			if(fileName[i]=='M'){			
 			}
 			else if(fileName[i]=='.'){
 					break;
 			}
 			else{
-				tabN[j]=fileName[i];
+				tabN[j]=fileName[i];/* Fill in the array with the matrix size */
 				j++;
 			}
 		}
-		sscanf(tabN,"%d",&N);
+		sscanf(tabN,"%d",&N);/* Convert this array in an integer N */
 		printf("The matrix size is: %dx%d.\n", N, N);
+		
+		/* check that the number of elements in the matrices is evenly divisible by the square 
+		root of the number of processes */
+		sN=N/square;
+		if(sN != floor(sN)){
+			printf("The submatrix size is not an integer.\n");
+			MPI_Finalize();/* Quit if there is not a valid number of processes */
+			exit(0);
+		}
+		else{
+			printf("Submatrix size: %g\n", sN);
+		}
 	}
 	/* All processes do this */
 	if ( MPI_Finalize() != MPI_SUCCESS) {
