@@ -14,12 +14,14 @@
 
 int main(int argc, char *argv[]) {
 	const int tag = 42;	        /* Message tag */
-	int id, ntasks, source_id, i, N;
+	int id, ntasks, source_id, i, j, N;
 	/* N is the size of the Matrix */
 	double square, sN;	/*square root of the number of processes, sN is the submatrix size*/
 	MPI_Status status;
 	char msg[80], fileName[20];	/* Message array  and file name array */
-	
+	double **A, **B; /* Matrices A and B, input matrices */
+	double **subMatrices[ntasks];
+
 	/* Initialize MPI */
 	if ( MPI_Init(&argc, &argv) != MPI_SUCCESS) {
 		printf("MPI_init failed!\n");
@@ -105,7 +107,49 @@ int main(int argc, char *argv[]) {
 		else{
 			printf("Submatrix size: %g\n", sN);
 		}
+		/* alocate memory for the input matrices and local sub-matrices */
+		/* we will alocate one row at a time */
+		A = (double **) malloc(N*sizeof(double *));
+		for (i=0; i<N; i++){
+			A[i] = (double *) malloc(N*sizeof(double));
+		}
+		for (i=0; i<N; i++){
+			for(j=0;j<N;j++){
+				A[i][j] = 0.0;
+			}
+		}
+		/* We do not need to use B as we have to multiply a matrix by itself */
+		/*B = (double **) malloc(N*sizeof(double *));
+		for (i=0; i<N; i++){
+			B[i] = (double *) malloc(N*sizeof(double));
+		}
+		for (i=0; i<N; i++){
+			for(j=0;j<N;j++){
+				B[i][j] = 0.0;
+			}
+		}*/
+		// alocate memory for local sub-matrices
+		/*for(i=0;i<ntasks;i++){
+			//alocate place for matrix rows at place i of the table
+			//subMatrices[i] = (double **) malloc(N*sizeof(double *));
+			for (i=0; i<N; i++){
+				//at place i, alocate place for matrix cols
+				//A[i] = (double *) malloc(N*sizeof(double));
+			}
+			for (i=0; i<N; i++){
+				for(j=0;j<N;j++){
+					//A[i][j] = 0.0;
+				}
+			}
+		}*/
+
+		/* Open the binary file, read the input matrices */
+		//unsigned char buff[100];
+		//File *p;
+		//p=fopen(fileName,"rb");		
+		//fread(buff,sizeof(buff),1,p);
 	}
+	free(A);
 	/* All processes do this */
 	if ( MPI_Finalize() != MPI_SUCCESS) {
 		printf("Error in MPI_Finalize!\n");
