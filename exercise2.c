@@ -14,10 +14,10 @@
 
 int main(int argc, char *argv[]) {
 	const int tag = 42;	        /* Message tag */
-	int   id, ntasks, source_id, i;
+	int   id, ntasks, source_id, i, N;//N is the size of the Matrix
 	double square;
 	MPI_Status status;
-	char msg[80];	      	       /* Message array */
+	char msg[80], fileName[20];	      	       /* Message array */
 	
 	/* Initialize MPI */
 	if ( MPI_Init(&argc, &argv) != MPI_SUCCESS) {
@@ -45,7 +45,50 @@ int main(int argc, char *argv[]) {
 		MPI_Finalize();/* Quit if there is not a valid number of processes */
 		exit(0);
 	}
-	
+	if(id==0){
+		printf("Enter file name:\n");
+		fflush(stdout);
+		scanf("%s", fileName);
+		int nameSize = 0;
+		while(fileName[nameSize]!='\0'){
+			nameSize++;
+		}
+		if(fileName[0]!='M'){
+			MPI_Finalize();
+			printf("Error in file name, it has to start with char M!\n");
+			exit(0);
+		}
+		if(fileName[nameSize-4]!='.'){
+			MPI_Finalize();
+			printf("Error in file name, no extension!\n");
+			exit(0);
+		}
+		for(i=0;i<nameSize;i++){
+			if(fileName[i]=='.'){
+				if((fileName[i+1]!='d')||(fileName[i+2]!='a')||(fileName[i+3]!='t')){
+					MPI_Finalize();
+					printf("Error in file name, wrong file extension!\n");
+					exit(0);
+				}
+			}
+		}
+		printf("File %s has a name of %d char.\n", fileName, nameSize);
+		char tabN[nameSize-4];
+		int j=0;
+		for(i=0;i<nameSize;i++){
+			if(fileName[i]=='M'){				
+			}
+			else if(fileName[i]=='.'){
+					break;
+			}
+			else{
+				tabN[j]=fileName[i];
+				j++;
+			}
+		}
+		sscanf(tabN,"%d",&N);
+		printf("The matrix size is: %dx%d.\n", N, N);
+	}
 	/* All processes do this */
 	if ( MPI_Finalize() != MPI_SUCCESS) {
 		printf("Error in MPI_Finalize!\n");
@@ -53,7 +96,7 @@ int main(int argc, char *argv[]) {
 	}
 	
 	if (id==0){
-		printf("Ready\n");
+		printf("End\n");
 	}
 	exit(0);
 }
