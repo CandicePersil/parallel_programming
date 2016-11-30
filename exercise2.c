@@ -11,16 +11,18 @@
 #include <stdlib.h>
 #include <math.h>
 #include <mpi.h>
+#include "exercise2.h"
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[]){
 	const int tag = 42;	        /* Message tag */
-	int id, ntasks, source_id, i, j, N;
+	int id, ntasks, source_id, i, j, k, N;
 	/* N is the size of the Matrix */
 	double square, sN;	/*square root of the number of processes, sN is the submatrix size*/
 	MPI_Status status;
-	char msg[80], fileName[20];	/* Message array  and file name array */
+	char msg[80], fileName[20], buff[50];	/* Message array, file name array and buff array*/
 	double **A, **B; /* Matrices A and B, input matrices */
-	double **subMatrices[ntasks];
+	FILE *p;
+	struct subMatrix sMTab[ntasks]; /* Creation of a table of struct that contains a matrix*/
 
 	/* Initialize MPI */
 	if ( MPI_Init(&argc, &argv) != MPI_SUCCESS) {
@@ -110,46 +112,107 @@ int main(int argc, char *argv[]) {
 		/* alocate memory for the input matrices and local sub-matrices */
 		/* we will alocate one row at a time */
 		A = (double **) malloc(N*sizeof(double *));
+		if (A==NULL){
+			printf("Allowance error.\n");
+			MPI_Finalize();
+			exit(0);
+		}
 		for (i=0; i<N; i++){
 			A[i] = (double *) malloc(N*sizeof(double));
+			if (A[i]==NULL){//Flo il m'a dit qu'il faut désalouer toutes 
+			//les alloc jusqu'à  présent avant de terminer ce programme
+				printf("Allowance error.\n");
+				MPI_Finalize();
+				exit(0);
+			}
 		}
+		printf("Matrix A:\n");
 		for (i=0; i<N; i++){
 			for(j=0;j<N;j++){
 				A[i][j] = 0.0;
+				printf("[%.2f]", A[i][j]);
 			}
+			printf("\n");
 		}
 		/* We do not need to use B as we have to multiply a matrix by itself */
-		/*B = (double **) malloc(N*sizeof(double *));
+		B = (double **) malloc(N*sizeof(double *));
+		if (B==NULL){
+			printf("Allowance error.\n");
+			MPI_Finalize();
+			exit(0);
+		}
 		for (i=0; i<N; i++){
 			B[i] = (double *) malloc(N*sizeof(double));
+			if (B[i]==NULL){
+				printf("Allowance error.\n");
+				MPI_Finalize();
+				exit(0);
+			}
 		}
+		printf("Matrix B:\n");
 		for (i=0; i<N; i++){
 			for(j=0;j<N;j++){
 				B[i][j] = 0.0;
+				printf("[%.2f]", B[i][j]);
 			}
-		}*/
-		// alocate memory for local sub-matrices
-		/*for(i=0;i<ntasks;i++){
+			printf("\n");
+		}
+		/* alocate memory for local sub-matrices */
+		for(i=0; i<ntasks; i++){
 			//alocate place for matrix rows at place i of the table
-			//subMatrices[i] = (double **) malloc(N*sizeof(double *));
-			for (i=0; i<N; i++){
-				//at place i, alocate place for matrix cols
-				//A[i] = (double *) malloc(N*sizeof(double));
+			sMTab[i].sM = (double **) malloc(sN*sizeof(double *));
+			if (sMTab[i].sM==NULL){
+				printf("Allowance error.\n");
+				MPI_Finalize();
+				exit(0);
 			}
-			for (i=0; i<N; i++){
-				for(j=0;j<N;j++){
-					//A[i][j] = 0.0;
+			for (j=0; j<sN; j++){
+				//at place i, alocate place for matrix cols
+				sMTab[i].sM[j] = (double *) malloc(sN*sizeof(double));
+				if (sMTab[i].sM[j]==NULL){
+					printf("Allowance error.\n");
+					MPI_Finalize();
+					exit(0);
 				}
 			}
-		}*/
-
+			printf("Matrix sM%i:\n", i);
+			for (j=0; j<sN; j++){
+				for(k=0;k<sN;k++){
+					sMTab[i].sM[j][k] = 0.0;
+					printf("[%.2f]", sMTab[i].sM[j][k]);
+				}
+				printf("\n");
+			}
+		}
+		
 		/* Open the binary file, read the input matrices */
-		//unsigned char buff[100];
-		//File *p;
-		//p=fopen(fileName,"rb");		
-		//fread(buff,sizeof(buff),1,p);
+		/*p=fopen(fileName,"rb");	
+		if (!p)
+		{
+			printf("Unable to open file!");
+			MPI_Finalize();
+			exit(0);
+		}
+		fread(buff,sizeof(buff),1,p);
+		for(i=0;i<N;i++){
+			printf("%g ",buff[i]);
+		}*/
+		
+		for (i=0; i<N; i++){
+			free(A[i]);
+		}
+		free(A);
+		for (i=0; i<N; i++){
+			free(B[i]);
+		}
+		free(B);
+		for(i=0; i<ntasks; i++){
+			for (j=0; j<sN; j++){
+				free(sMTab[i].sM[j]);
+			}
+			free(sMTab[i].sM);
+		}
 	}
-	free(A);
 	/* All processes do this */
 	if ( MPI_Finalize() != MPI_SUCCESS) {
 		printf("Error in MPI_Finalize!\n");
